@@ -1,16 +1,15 @@
 #!/bin/bash
 
-if [ "`id -u`" != 0 ]; then
-  echo "Přístup zamítnut!"
-  exit
-fi
-
+############################
+#     Global Variables     #
+############################
 VMID=$1
 MAX_BACKUPS=$2
 STORAGE=$3
 COMPRESS=$4
 MAIL_TO=$5
 
+# set optional variables
 if [[ -z $COMPERSS ]]; then
   COMPERSS="lzo"
 fi
@@ -18,6 +17,19 @@ fi
 if [[ -z $MAIL_TO ]]; then
   MAIL_TO="nobody@nodomain.no"
 fi
+
+
+######################
+#     exit codes     #
+######################
+EXIT_NOT_ROOT=1
+EXIT_STORAGE=2
+EXIT_VMID=3
+EXIT_HELP=4
+
+#####################
+#     Functions     #
+#####################
 
 getHelp () {
   echo -e "\n"
@@ -37,17 +49,15 @@ checkIfStorageExist () {
   LINE_WITH_STORAGE=(`cat -n /etc/pve/storage.cfg | grep "$1"`)
   if [ -z $LINE_WITH_STORAGE ]; then
     echo "Storage neexistuje"
-    getHelp
-    exit
+    exit 2
   fi
 }
 
 checkIfVmidExist () {
-  VMID_CONFIG=(`qm config $1 2> /dev/null`)
+  VMID_CONFIG=(`/usr/sbin/qm config $1 2> /dev/null`)
   if [ -z $VMID_CONFIG ]; then
     echo "VMID neexistuje"
-    getHelp
-    exit
+    exit 3
   fi
 }
 
@@ -55,26 +65,57 @@ getStoragePath () {
   LINE_WITH_STORAGE=(`cat -n /etc/pve/storage.cfg | grep "$1"`)
   NUM_OF_STORAGE_LINE=${LINE_WITH_STORAGE[0]}
   NUM_OF_LINE_WITH_PATH=$((NUM_OF_STORAGE_LINE + 1))
-  STORAGE_PATH=(`cat -n /etc/pve/storage.cfg | grep ^"    $NUM_OF_LINE_WITH_PATH"`)
-  RESULT="${STORAGE_PATH[2]}/dump"
+  GREP_LINES=(`cat -n /etc/pve/storage.cfg | grep $NUM_OF_LINE_WITH_PATH`)
+
+  for i in ${!GREP_LINES[@]}; do
+    if [ ${GREP_LINES[$i]} == "path" ]; then
+      index=$((i + 1))
+      STORAGE_PATH=${GREP_LINES[$index]}
+    fi
+  done
+
+  RESULT="$STORAGE_PATH/dump"
+
   if [ ${RESULT:0:1} == "/" ]; then
     echo $RESULT
   fi
 }
 
+isRootUser () {
+  USER_GROUPS=(`groups $USER`)
+  IN_SUDO=0
+
+  for group in ${USER_GROUPS[@]}; do
+    if [ $group == "sudo" ]; then
+      IN_SUDO=1
+    fi
+  done
+
+  if [ "`id -u`" != 0 ] && [ $IN_SUDO -ne 1 ]; then
+    echo "Přístup zamítnut!"
+    exit 1
+  fi
+}
+
+########################
+#     Main routine     #
+########################
+
 if [[ $1 == "" || $1 == "help" ]]; then
   getHelp
-  exit
+  exit 4
 fi
 
-#kontrola existence VMID
+# authorization
+isRootUser
+
+# check VMID
 checkIfVmidExist $VMID
 
-#kontrola existence storage
+# check storage
 checkIfStorageExist $STORAGE
 
-
-#načíst všechny backupy
+# load all backups
 FILES=($(ls -rt `getStoragePath $STORAGE`))
 BACKUP_FILES=()
 
@@ -86,7 +127,7 @@ for i in ${FILES[@]}; do
   fi
 done
 
-#smazání starých backupů
+# remove old backups
 STORAGE_PATH=`getStoragePath $STORAGE`
 NUM_OF_BACKUPS=${#BACKUP_FILES[@]}
 INDEX=0
@@ -109,5 +150,5 @@ while [ $((NUM_OF_BACKUPS)) -ge $((MAX_BACKUPS)) ]; do
 done
 
 
-#backup
-vzdump $((VMID)) --compress $COMPRESS  --storage $STORAGE --mailto $MAIL_TO --maxfiles $MAX_BACKUPS
+# make backup
+/usr/bin/vzdump $((VMID)) --compress $COMPRESS  --storage $STORAGE --mailto $MAIL_TO --maxfiles $MAX_BACKUPS

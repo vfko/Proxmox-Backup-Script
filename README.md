@@ -1,2 +1,5 @@
 # Proxmox-Backup-Script
-Skript pro vyvolání zálohy v Proxmox VE
+
+
+For backups of Proxmox VE
+
