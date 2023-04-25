@@ -18,15 +18,6 @@ if [[ -z $MAIL_TO ]]; then
   MAIL_TO="nobody@nodomain.no"
 fi
 
-
-######################
-#     exit codes     #
-######################
-EXIT_NOT_ROOT=1
-EXIT_STORAGE=2
-EXIT_VMID=3
-EXIT_HELP=4
-
 #####################
 #     Functions     #
 #####################
@@ -49,7 +40,7 @@ checkIfStorageExist () {
   LINE_WITH_STORAGE=(`cat -n /etc/pve/storage.cfg | grep "$1"`)
   if [ -z $LINE_WITH_STORAGE ]; then
     echo "Storage neexistuje"
-    exit 2
+    exit
   fi
 }
 
@@ -57,7 +48,7 @@ checkIfVmidExist () {
   VMID_CONFIG=(`/usr/sbin/qm config $1 2> /dev/null`)
   if [ -z $VMID_CONFIG ]; then
     echo "VMID neexistuje"
-    exit 3
+    exit
   fi
 }
 
@@ -76,7 +67,10 @@ getStoragePath () {
 
   RESULT="$STORAGE_PATH/dump"
 
-  if [ ${RESULT:0:1} == "/" ]; then
+  if [ ${RESULT:0:5} == "/dump" ]; then
+    echo "Nepodařilo se získat cesu k storage."
+    exit
+  else
     echo $RESULT
   fi
 }
@@ -93,7 +87,7 @@ isRootUser () {
 
   if [ "`id -u`" != 0 ] && [ $IN_SUDO -ne 1 ]; then
     echo "Přístup zamítnut!"
-    exit 1
+    exit
   fi
 }
 
@@ -103,7 +97,7 @@ isRootUser () {
 
 if [[ $1 == "" || $1 == "help" ]]; then
   getHelp
-  exit 4
+  exit
 fi
 
 # authorization
@@ -151,4 +145,4 @@ done
 
 
 # make backup
-/usr/bin/vzdump $((VMID)) --compress $COMPRESS  --storage $STORAGE --mailto $MAIL_TO --maxfiles $MAX_BACKUPS
+/usr/bin/vzdump $((VMID)) --compress $COMPRESS  --storage $STORAGE --mailto $MAIL_TO
