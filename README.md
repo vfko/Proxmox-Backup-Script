@@ -14,12 +14,12 @@ For more information how to work with this script you can use `proxmox-backup.sh
 # HOW TO USE PROXMOX-BACKUP #
 
 
-proxmox-backup.sh <vmid> <max_backups> <storage> <compress_format> <email>
+proxmox-backup.sh vmid max_backups storage compress_format email
 
-<vmid>: ID of virtual machine or container
-<max_backups>: number of backups kept, older backups will be deleted 
-<storage>: name of storage
-<compress_format>: type of compression lzo/gz/zstd - optional (default=lzo)
-<email>: email for notification - optional
+vmid: ID of virtual machine or container
+max_backups: number of backups kept, older backups will be deleted 
+storage: name of storage
+compress_format: type of compression lzo/gz/zstd - optional (default=lzo)
+email: email for notification - optional
 
 Example: `proxmox-backup.sh 101 5 My-backup-storage zstd my.email@my-domain.com`
