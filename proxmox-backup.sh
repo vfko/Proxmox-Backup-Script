@@ -34,7 +34,7 @@ getHelp () {
   echo -e "    <vmid>: ID of virtual machine or container \n"
   echo -e "    <max_backups>: number of backups kept, older backups will be deleted \n"
   echo -e "    <storage>: name of storage \n"
-  echo -e "    <compress_format>: type of compression lzo/gz/zstd - optional (default=lzo) \n"
+  echo -e "    <compress_format>: type of compression lzo/gzip/zstd - optional (default=lzo) \n"
   echo -e "    <email>: email for notification - optional \n\n"
   echo -e "    Example: proxmox-backup.sh 101 5 My-backup-storage zstd my.email@my-domain.com\n"
 }
@@ -92,16 +92,16 @@ isRootUser () {
 
 checkIfCompressFormatIsValid() {
   ENTRY_FORMAT=$1
-  USAGE_COMPRESS_FORMAT=( "zstd" "ZSTD" "lzo" "LZO" "gz" "GZ" )
+  USAGE_COMPRESS_FORMAT=( "zstd" "ZSTD" "lzo" "LZO" "gzip" "GZIP" )
   IS_IN_ARRAY=0
   for i in ${USAGE_COMPRESS_FORMAT[@]}; do
     if [ "$i" == "$ENTRY_FORMAT" ]; then
       IS_IN_ARRAY=1
     fi
   done
-  if [ $IS_IN_ARRAY -ne 1 ]; then
+  if [ $IS_IN_ARRAY -eq 0 ]; then
     echo -e "\nCompress format is not valid."
-    echo -e "Compress formats: zstd/lzo/gz \n"
+    echo -e "Compress formats: zstd/lzo/gzip \n"
     echo -e "Try \`proxmox-backup.sh help\` \n"
     exit
   fi
