@@ -10,9 +10,9 @@ This script remove older backups and start backup by vzdump.
 For more information how to work with this script you can use `proxmox-backup.sh help`.
 
 
-#############################
+
 # HOW TO USE PROXMOX-BACKUP #
-#############################
+
 
 proxmox-backup.sh <vmid> <max_backups> <storage> <compress_format> <email>
 
@@ -22,4 +22,4 @@ proxmox-backup.sh <vmid> <max_backups> <storage> <compress_format> <email>
 <compress_format>: type of compression lzo/gz/zstd - optional (default=lzo)
 <email>: email for notification - optional
 
-Example: proxmox-backup.sh 101 5 My-backup-storage zstd my.email@my-domain.com
+Example: `proxmox-backup.sh 101 5 My-backup-storage zstd my.email@my-domain.com`
